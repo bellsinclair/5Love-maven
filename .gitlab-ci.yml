@@ -15,8 +15,8 @@ default:
 
 variables:
     SONAR_USER_HOME: /opt/sonar-scanner
-
-
+    DOCKERHUB_USERNAME: devopseasylearning2021
+    DOCKERHUB_PASSWORD: DevOps2021@
 
 sonarqube:
   variables:
@@ -24,8 +24,7 @@ sonarqube:
   stage: analyze
   script:
     - $SONAR_USER_HOME/bin/sonar-scanner
-  tags:
-    - n4docker
+
   image: sonarsource/sonar-scanner-cli:latest
   needs: []
 
@@ -81,30 +80,30 @@ maven-build:
     dependencies: 
       - maven-package
     script:
-        - TAG=`git rev-parse --short=4  HEAD`
-        - docker build -t $DOCKERHUB_USERNAME/maven:$TAG .
+        - TAG=`git rev-parse --short=6  HEAD`
+        - docker build -t $DOCKERHUB_USERNAME/5love:$TAG .
     needs: [maven-package]
     tags:
-      - n2shell
+      - n1shell
 # ###############  Login to dockerhub
 maven-login:
     stage: build
     script:
         - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
     tags:
-      - n2shell
+      - n1shell
 
 # ###############  Push image to dockerhub
 maven-push:
     stage: push
     script:
-        - TAG=`git rev-parse --short=4  HEAD`
-        - docker push $DOCKERHUB_USERNAME/maven:$TAG
+        - TAG=`git rev-parse --short=6  HEAD`
+        - docker push $DOCKERHUB_USERNAME/5love:$TAG
     tags:
-      - n2shell
+      - n1shell
     needs: [maven-verify,maven-build, maven-login]
     only:
-        - develop
+        - main
 
 
 # ###############  CLean docker enviroment
@@ -113,21 +112,21 @@ maven-clean-docker:
     script:
         - docker system prune -f -a || true 
     tags:
-      - n2shell
+      - n1shell
     only:
-        - develop
+        - main
 
 # ###############  Generate compose file
 maven-deploy:
     stage: deploy
     script: | 
         rm -rf docker-compose.yml || true
-        TAG=`git rev-parse --short=4  HEAD`
+        TAG=`git rev-parse --short=6  HEAD`
         cat <<EOF > docker-compose.yml
           version : "3.3"
           services:
             tomcat:
-                 image: $DOCKERHUB_USERNAME/maven:$TAG
+                 image: $DOCKERHUB_USERNAME/5love:$TAG
                  expose:
                   - 90
                   - 100
@@ -137,11 +136,11 @@ maven-deploy:
                  ports: 
                   - 9595:8080    
         EOF
-        TAG=`git rev-parse --short=4  HEAD`
+        TAG=`git rev-parse --short=6  HEAD`
         docker-compose up -d
     tags:
-      - n2shell
+      - n1shell
     needs: [maven-push,maven-clean-docker]
     only:
-        - develop
-    environment: develop
+        - main
+    environment: main
